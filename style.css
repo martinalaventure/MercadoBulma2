@@ -6,7 +6,7 @@ body {
 
 /* Colores personalizados */
 :root {
-  --card-background-color: #de0ec2;
+  --card-background-color: grey;
   --title-color: #e7d9d9;
   --primary-color: #fffff;
 }
@@ -28,18 +28,19 @@ body {
 
 /* Estilo del input de búsqueda */
 #search-input {
-  border: 2px solid var(--primary-color);
+  border: 2px solid;
+  border-color: grey;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 #search-input:focus {
-  border-color: var(--secondary-color);
+  border-color:black;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Estilo de las tarjetas */
 .card {
-  border: 1px solid #e0e0e0;
+  border: 1px solid black;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -93,8 +94,7 @@ body {
 }
 
 .custom-card {
-  border: 3px solid hsl(48, 100%, 67%);
-  /* Color de borde pastel amarillo */
+  border: 3px solid hsl(48, 3%, 28%);
   border-radius: 15px;
   /* Opcional: borde redondeado */
 }
@@ -111,7 +111,7 @@ body {
 }
 
 #mensaje {
-  color: hsl(48, 100%, 67%); /* Cambia este color según tus preferencias */
+  color: hsl(40, 3%, 21%); 
   margin: 0; /* Eliminar márgenes */
   font-size: 20px;
   font-weight: bold;

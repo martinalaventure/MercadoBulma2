@@ -1,69 +1,197 @@
-//lista de animales, revisar y corregir
-
-const getTasks = async () => {
-  try {
-    const response = await fetch("http://localhost:3000/api/tasks");
-    if (response.ok) {
-      const jsonResponse = await response.json();
-      return jsonResponse;
-    }
-  }
-  catch (error) {
-    console.error(error);
-  }
-}
-
-let animales = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  animales = await getTasks();
-    mostrarLista(obtenerItems(animales));
-    setupDragAndDrop(); // Configurar el drag and drop
-    document.getElementById("sort-dropdown").addEventListener("change", ordenarLista);
+  await getAnimals();
+  setupDragAndDrop();
+  setupCartDropZone();
+  document.getElementById("sort-dropdown").addEventListener("change", ordenarLista);
+  document.getElementById("Buscar").addEventListener("click", searchItems);
+});
+
+function setupDragAndDrop() {
+  const cards = document.querySelectorAll(".card");
+
+  cards.forEach((card, index) => {
+    card.setAttribute('data-index', index);
+    card.setAttribute('draggable', true);
+    card.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData("text/plain", card.getAttribute('data-index'));
+    });
   });
- 
-  function ordenarLista() {
-    let sortValue = document.getElementById("sort-dropdown").value;
-    let sortAnimals = [...animales];
-  
-    if (sortValue === "price-asc") {
-      sortAnimals.sort((a, b) => a.Edad - b.Edad);
-    } else if (sortValue === "price-desc") {
-      sortAnimals.sort((a, b) => b.Edad - a.Edad);
+}
+
+
+function setupCartDropZone() {
+  const dropZone = document.getElementById("drop-zone");
+  let mensaje = document.getElementById("mensaje");
+
+  dropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+  });
+
+  dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    const index = parseInt(event.dataTransfer.getData("text/plain"));
+    const cards = document.querySelectorAll(".card");
+    const cardElement = cards[index];
+
+    if (cardElement) {
+      const product = {
+        name: cardElement.querySelector('.title').textContent,
+        price: parseFloat(cardElement.querySelector('.subtitle').textContent.split(':')[1]),
+        image: cardElement.querySelector('img').src,
+        description: cardElement.querySelector('.content').textContent.trim()
+      };
+
+      if (product){
+        const productHTML = `
+        <div id="divDe${product.name}" style="display: flex; align-items: center; gap: 10px;">
+          <img src="${product.image}" alt="${product.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;">
+          <h1 id="mensaje">${product.name} ($${product.price})</h1>
+        </div>
+        `;
+
+        if (!dropZone.innerHTML.includes(`id="divDe${product.name}"`)) {
+          mensaje.style.display = 'none'; // Oculta el mensaje por defecto
+          dropZone.innerHTML += productHTML + `<br>`;
+          dropZone.style.textAlign = 'left'; // Ajusta el estilo de la zona de drop
+        }
+      }      
     }
-    
-    mostrarLista(obtenerItems(sortAnimals));
-    setupDragAndDrop(); // Re-setup del drag and drop después de ordenar
-  }
-  
-
-//funcion para obtener la sublista filtrada.
-function filtrarItems(nombre, descripcion) {
-  const nombreMinus = nombre.toLowerCase();
-  const descripcionMinus = descripcion.toLowerCase();
-  const resultados = animales.filter((animal) => {
-    return (
-      animal.title.toLowerCase().includes(nombreMinus) ||
-      animal.description.toLowerCase().includes(descripcionMinus)
-    );
   });
+}
 
-  return resultados.length > 0 ? obtenerItems(resultados) : null;
+function openInfoModal(cardElement) {
+  const modal = document.getElementById("infoModal");
+  const modalContent = document.getElementById("infoModalContent");
+
+  const name = cardElement.querySelector('.title').textContent;
+  const price = cardElement.querySelector('.subtitle').textContent;
+  const description = cardElement.querySelector('.content').textContent;
+  const image = cardElement.querySelector('img').src;
+
+  modalContent.innerHTML = `
+    <figure class="image is-4by3">
+      <img src="${image}" alt="${name}" />
+    </figure>
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Price:</strong> ${price}</p>
+    <p><strong>Description:</strong> ${description}</p>
+  `;
+
+  modal.classList.add("is-active");
+}
+
+// Obtener productos del backend
+async function getAnimals() {
+  try {
+    const response = await fetch("http://localhost:3000/api/products");
+    const products = await response.json();
+    mostrarLista(obtenerItems(products)); // Usar la función para mostrar productos
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
 }
 
 function searchItems() {
   const searchInput = document.getElementById("Text").value.toLowerCase();
 
   if (searchInput.trim() === "") {
-    // Si el input está vacío, mostramos todos los elementos.
-    mostrarLista(obtenerItems(animales));
+      getAnimals();
   } else {
-    const filteredItems = filtrarItems(searchInput, searchInput);
-    mostrarLista(filteredItems);
+      fetch("http://localhost:3000/api/products")
+        .then(response => response.json())
+        .then(products => {
+          const filteredProducts = products.filter((product) => 
+              product.name.toLowerCase().includes(searchInput) ||
+              product.description.toLowerCase().includes(searchInput)
+          );
+          mostrarLista(obtenerItems(filteredProducts));
+        })
+        .catch(error => console.error('Error:', error));
   }
 }
 
-// EventListener al botón "Buscar"
+function ordenarLista() {
+  let sortValue = document.getElementById("sort-dropdown").value;
+  
+  fetch("http://localhost:3000/api/products")
+    .then(response => response.json())
+    .then(products => {
+      let sortedProducts = [...products];
+
+      if (sortValue === "price-asc") {
+          sortedProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+      } else if (sortValue === "price-desc") {
+          sortedProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+      }
+
+      mostrarLista(obtenerItems(sortedProducts));
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+document.getElementById("saveProduct").addEventListener("click", async function () {
+  const form = document.getElementById("productForm");
+  const nombreProducto = form.querySelector('input[type="text"]').value;
+  const descripcionProducto = form.querySelector("textarea").value;
+  const edadInput = form.querySelector('input[type="number"]');
+  const edad = parseFloat(edadInput.value);
+  const imagenForm = form.querySelector('input[type="file"]').files[0];
+
+  if (form.checkValidity()) {
+    const imagenURL = URL.createObjectURL(imagenForm);
+
+    const nuevoProducto = {
+      name: nombreProducto,
+      description: descripcionProducto,
+      price: edad.toString(),
+      image: imagenURL
+    };
+
+    try {
+      const response = await fetch('http://localhost:3000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(nuevoProducto),
+      });
+
+      if (response.ok) {
+        getAnimals(); // Refresca la lista de productos
+        form.reset(); // Limpia el formulario
+        document.getElementById("productModal").classList.remove("is-active"); // Cierra el modal
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
+  }
+});
+
+function obtenerItems(productList) {
+  return productList.map((product) => {
+    return `
+      <div class="card has-background-warning-dark custom-card" data-id="${product.id}" draggable="true">
+        <div class="card-image">
+          <figure class="image is-4by3">
+            <img class="is-fullwidth fixed" src="${product.image}" alt="${product.name}" />
+          </figure>
+        </div>
+        <div class="card-content">
+          <div class="media">
+            <div class="media-content">
+              <p class="title is-4">${product.name}</p>
+              <p class="subtitle is-6">Precio: $${product.price}</p>
+            </div>
+          </div>
+          <div class="content">${product.description}</div>
+          <button class="button is-danger" onclick="deleteProduct(event, '${product.id}')">Eliminar</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 document.getElementById("Buscar").addEventListener("click", searchItems);
 document.getElementById("Text").addEventListener("input", searchItems);
 
@@ -74,11 +202,6 @@ searchInputElement.addEventListener("keydown", function (event) {
     event.preventDefault();
     searchItems();
   }
-});
-
-// mostramos todos los elementos al cargar la página por primera vez
-document.addEventListener("DOMContentLoaded", () => {
-  mostrarLista(obtenerItems(animales));
 });
 
 // Maneja la apertura y cierre del modal
@@ -99,85 +222,101 @@ document.getElementById("closeInfoModal").addEventListener("click", function () 
   document.getElementById("infoModal").classList.remove("is-active");
 });
 
-// Maneja el guardado del animal
-document.getElementById("saveProduct").addEventListener("click", function () {
-  const form = document.getElementById("productForm");
-  const edadInput = form.querySelector('input[type="number"]');
-  const edad = parseFloat(edadInput.value);
-
-  if (form.checkValidity() && edad > 0 && edad <= 100) {
-    const nombreProducto = form.querySelector('input[type="text"]').value;
-    const descripcionProducto = form.querySelector("textarea").value;
-    const imagenForm = form.querySelector('input[type="file"]').files[0];
-
-    const imagenURL = URL.createObjectURL(imagenForm);
-
-    const todo = {
-      nombre: nombreProducto,
-      descripcion: descripcionProducto,
-      imagen: imagenURL,
-      Edad: edad,
-    };
-
-    animales.push(todo);
-
-    document.getElementById("productModal").classList.remove("is-active");
-    mostrarLista(obtenerItems(animales));
-    // Limpia el formulario
-    form.reset();
-  } else {
-    // muestra errores si los campos no están llenos o la edad es inválida
-    if (edad < 0 || edad > 100) {
-      alert("La edad debe ser mayor o igual que 0 y no más de 100 años.");
-      edadInput.setCustomValidity("La edad debe ser mayor que 0 y no más de 100 años.");
-    } else {
-      edadInput.setCustomValidity("");
-    }
-    form.reportValidity();
-  }
+/*
+document.addEventListener("DOMContentLoaded", async () => {
+  await getAnimals();
+  setupDragAndDrop();
+  document.getElementById("sort-dropdown").addEventListener("change", ordenarLista);
+  document.getElementById("Buscar").addEventListener("click", searchItems);
 });
-
-function obtenerItems(animalLists) {
-  return animalLists.map((animal, index) => {
-    // let años = animal.Edad == 1 ? `${animal.Edad} año` : `${animal.Edad} años`;
-    return `
-      <div class="card has-background-warning-light custom-card" id="animal-card-${index}" draggable="true">
-        <div class="card-image">
-          <figure class="image is-4by3">
-            <img class="is-fullwidth fixed" src="./image/${animal.id}.jpeg" alt="${animal.title}" />
-          </figure>
-        </div>
-        <div class="card-content">
-          <div class="media">
-            <div class="media-content">
-              <p class="title is-4">${animal.description}</p>
-              <p class="subtitle is-6">inicio de vida: ${animal.startDate}</p>
-            </div>
-          </div>
-          <div class="content">
-            ${animal.description}
-          </div>
-        </div>
-      </div>
-    `;
-  });
-}
-
+*/
 function mostrarLista(lista) {
   const contentDiv = document.getElementById("content");
   if (contentDiv) {
-    contentDiv.innerHTML = "";
+      contentDiv.innerHTML = "";
 
-    if (lista === null || lista.length === 0) {
-      contentDiv.innerHTML = "<p>No hay ningún ítem que cumpla con la búsqueda</p>";
-    } else {
-      contentDiv.innerHTML = lista.join("");
-      setupDragAndDrop();
-      setupAnimalCardClicks(); // Buildea ambos setUps
-    }
+      if (lista === null || lista.length === 0) {
+          contentDiv.innerHTML = "<p>No hay ningún ítem que cumpla con la búsqueda</p>";
+      } else {
+          contentDiv.innerHTML = lista;
+          setupDragAndDrop();
+          setupAnimalCardClicks();
+      }
   }
 }
-  
+
+async function deleteProduct(event, id) {
+  event.stopPropagation();
+  try {
+    const response = await fetch(`http://localhost:3000/api/products/${id}`, { method: 'DELETE' });
+
+    if (response.ok) {
+      getAnimals(); // Refresca la lista de productos
+    }
+  } catch (error) {
+    console.error('Error deleting product:', error);
+  }
+}
+
+function setupAnimalCardClicks() {
+  const cards = document.querySelectorAll(".card");
+
+  cards.forEach((card) => {
+      card.addEventListener("click", () => {
+          const productId = card.getAttribute('data-id');
+          openInfoModal(card);
+      });
+  });
+}
+/*
+//funcion para obtener la sublista filtrada.
+function filtrarItems(nombre, descripcion) {
+  const nombreMinus = nombre.toLowerCase();
+  const descripcionMinus = descripcion.toLowerCase();
+  const resultados = animales.filter((animal) => {
+    return (
+      animal.nombre.toLowerCase().includes(nombreMinus) ||
+      animal.descripcion.toLowerCase().includes(descripcionMinus)
+    );
+  });
+
+  return resultados.length > 0 ? obtenerItems(resultados) : null;
+}
+
+
+
+// mostramos todos los elementos al cargar la página por primera vez
+document.addEventListener("DOMContentLoaded", () => {
+  mostrarLista(obtenerItems(animales));
+});
+
+
+
+function obtenerItems(animalLists) {
+    return animalLists.map((animal, index) => {
+        let años = animal.Edad == 1 ? `${animal.Edad} año` : `${animal.Edad} años`;
+        return `
+        <div class="card has-background-warning-light custom-card" data-index="${index}" draggable="true">
+          <div class="card-image">
+            <figure class="image is-4by3">
+              <img class="is-fullwidth fixed" src="${animal.imagen}" alt="${animal.nombre}" />
+            </figure>
+          </div>
+          <div class="card-content">
+            <div class="media">
+              <div class="media-content">
+                <p class="title is-4">${animal.nombre}</p>
+                <p class="subtitle is-6">Edad: ${años}</p>
+              </div>
+            </div>
+            <div class="content">
+              ${animal.descripcion}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+}
 
 // muestra a los animales
 document.addEventListener("DOMContentLoaded", () => {
@@ -185,110 +324,36 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartDropZone();
 });
 
-const dropZone = document.getElementById("drop-zone");
-let mensaje = document.getElementById("mensaje");
+// Muestra todos los elementos al cargar la página
+document.addEventListener("DOMContentLoaded", () => {
+  mostrarLista(obtenerItems(animales));
+  setupDragAndDrop(); // Configura el drag and drop
+});
 
-function setupCartDropZone() {
-  const dropZone = document.getElementById("drop-zone");
-  let mensaje = document.getElementById("mensaje");
 
-  dropZone.addEventListener("dragover", (event) => {
-    event.preventDefault();
-  });
 
-  dropZone.addEventListener("drop", (event) => {
-    event.preventDefault();
-    const animalIndex = parseInt(event.dataTransfer.getData("text/plain"));
-    const cards = document.querySelectorAll(".card");
-    const cardElement = cards[animalIndex];
-    
-    if (cardElement) {
-      const animal = {
-        nombre: cardElement.querySelector('.title').textContent,
-        Edad: parseFloat(cardElement.querySelector('.subtitle').textContent.split(':')[1]),
-        imagen: cardElement.querySelector('img').src,
-        descripcion: cardElement.querySelector('.content').textContent.trim()
-      };
-      
-      if (animal) {
-        const animalName = animal.title;
-        const animalAge = animal.comments[1] == 1 ? "1 año" : `${animal.comments[1]} años`;
-        const animalImage = animal.comments[2];
-        const animalEntero = `
-          <div id="divDe${animalName}" style="display: flex; align-items: center; gap: 10px;">
-            <img src="${animalImage}" alt="${animalName}" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid hsl(48, 100%, 67%); border-radius: 50%;">
-            <h1 id="mensaje">${animalName} (${animalAge})</h1>
-          </div>`;
+function openAnimalDetailsModal(animal) {
+  const modal = document.getElementById("animalDetailsModal");
+  const title = document.getElementById("animalDetailsTitle");
+  const image = document.getElementById("animalDetailsImage");
+  const age = document.getElementById("animalDetailsAge");
+  const description = document.getElementById("animalDetailsDescription");
 
-        if (!dropZone.innerHTML.includes(`id="divDe${animalName}"`)) {
-          mensaje.style.display = 'none';
-          dropZone.innerHTML += animalEntero + `<br>`;
-          dropZone.style.textAlign = 'left';
-        }
-      }
-    }
-  });
+  title.textContent = animal.nombre;
+  image.src = animal.imagen;
+  image.alt = animal.nombre;
+  age.textContent = `Edad: ${animal.Edad == 1 ? '1 año' : animal.Edad + ' años'}`;
+  description.textContent = animal.descripcion;
+
+  modal.classList.add("is-active");
 }
-
-function setupDragAndDrop() {
-  const cards = document.querySelectorAll(".card");
-
-  cards.forEach((card, index) => {
-    card.setAttribute('data-index', index);
-    card.addEventListener("dragstart", (event) => {
-      event.dataTransfer.setData("text/plain", card.getAttribute('data-index'));
-    });
-  });
-}
-
-
-// function setupAnimalCardClicks() {
-//   const cards = document.querySelectorAll(".card");
-//   cards.forEach((card, index) => {
-//     card.addEventListener("click", () => {
-//       openAnimalDetailsModal(animales[index]);
-//     });
-//   });
-//}
-
-// function openAnimalDetailsModal(animal) {
-//   const modal = document.getElementById("animalDetailsModal");
-//   const title = document.getElementById("animalDetailsTitle");
-//   const image = document.getElementById("animalDetailsImage");
-//   const age = document.getElementById("animalDetailsAge");
-//   const description = document.getElementById("animalDetailsDescription");
-
-//   title.textContent = animal.title;
-//   image.src = animal.imagen;
-//   image.alt = animal.nombre;
-//   age.textContent = `Edad: ${animal.Edad == 1 ? '1 año' : animal.Edad + ' años'}`;
-//   description.textContent = animal.descripcion;
-
-//   modal.classList.add("is-active");
-// }
 
 // Cierra los detalles del animal modal
-// document.getElementById("closeAnimalDetailsModal").addEventListener("click", function () {
-//   document.getElementById("animalDetailsModal").classList.remove("is-active");
-// });
+document.getElementById("closeAnimalDetailsModal").addEventListener("click", function () {
+  document.getElementById("animalDetailsModal").classList.remove("is-active");
+});
 
-// Función para abrir el modal con información de la mascota
-function openInfoModal(animal) {
-    const modal = document.getElementById("infoModal");
-    const modalContent = document.getElementById("infoModalContent");
 
-    // Actualiza el contenido del modal con la información del animal
-    modalContent.innerHTML = `
-        <figure class="image is-4by3">
-            <img src="image/${animal.id}.jpeg" alt="${animal.title}" />
-        </figure>
-        <p><strong>Nombre:</strong> ${animal.title}</p>
-        <p><strong>Edad:</strong> ${animal.startDate} años</p>
-        <p><strong>Descripción:</strong> ${animal.description}</p>
-    `;
-
-    modal.classList.add("is-active");
-}
 
 // Agregar EventListener a cada card para abrir el modal al hacer clic
 function setupCardClick() {
@@ -301,18 +366,11 @@ function setupCardClick() {
     });
 }
 
-function mostrarLista(lista) {
-    const contentDiv = document.getElementById("content");
-    if (contentDiv) {
-        contentDiv.innerHTML = "";
 
-        if (lista === null || lista.length === 0) {
-            contentDiv.innerHTML =
-                "<p>No hay ningún ítem que cumpla con la búsqueda</p>";
-        } else {
-            contentDiv.innerHTML = lista.join("");
-            setupDragAndDrop();
-            setupCardClick(); 
-        }
-    }
-}
+
+document.addEventListener("DOMContentLoaded", () => {
+    mostrarLista(obtenerItems(animales));
+    setupDragAndDrop();
+    document.getElementById("sort-dropdown").addEventListener("change", ordenarLista);
+});
+*/

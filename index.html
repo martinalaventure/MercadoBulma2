@@ -4,38 +4,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PawShow</title>
+    <title>Technology</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
     <script defer src="script.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <section class="section has-background-warning-light">
-        <h1 class="title has-text-warning" id="titulito">PawShow</h1>
+    <section class="section has-background-grey-dark">
+        <h1 class="title has-text-warning-dark" id="titulito">Technology</h1>
 
         <div class="fixed-grid has-8-cols">
             <form class="grid" id="searchForm">
-                <input class="input cell is-col-span-6 cent is-warning tuki" type="text" placeholder="Encontrá la perfección"
+                <input class="input cell is-col-span-6 cent is-warning-dark tuki" type="text" placeholder="Buscar producto"
                     id="Text" />
-                <input class="button cell is-primary has-background-warning" type="button" id="Buscar" value="Buscar" />
+                <input class="button cell is-primary has-text-grey-lighter	has-background-warning-dark" type="button" id="Buscar" value="Buscar" />
             </form>
 
-            <button class="button is-primary has-background-warning" id="openModal">Agregar mascota</button>
+            <button class="button is-primary has-background-warning-dark has-text-grey-lighter" id="openModal">Agregar producto</button>
 
             <div id="drop-zone" class="drop-zone">
-                <h1 id="mensaje">Arrastra aquí a tu mascota favorita!</h1>
+                <h1 id="mensaje">Arrastra aquí un producto</h1>
             </div>
 
-
             <div class="grid">
-                <div class="field has-2-cols" >
+                <div class="field has-2-cols">
                     <div class="control">
                         <div class="select is-info">
-                            <select id="sort-dropdown" id="tuki"> <!--Por alguna razón no cambia el color, me rindo-->
-                                <option value="price-default">Edad: no ordenar</option>
-                                <option value="price-asc">Edad: Menor a Mayor</option>
-                                <option value="price-desc">Edad: Mayor a Menor</option>
+                            <select id="sort-dropdown">
+                                <option value="price-default">Precio: no ordenar</option>
+                                <option value="price-asc">Precio: Menor a Mayor</option>
+                                <option value="price-desc">Precio: Mayor a Menor</option>
                             </select>
                         </div>
                     </div>
@@ -43,36 +42,36 @@
             </div>
         </div>
 
-        <!-- Modal agregar mascota -->
-        <div class="modal " id="productModal">
-            <div class="modal-background "></div>
+        <!-- Modal agregar producto -->
+        <div class="modal" id="productModal">
+            <div class="modal-background"></div>
             <div class="modal-card">
-                <header class="modal-card-head has-background-warning-light">
-                    <p class="modal-card-title new">Nueva mascota</p>
+                <header class="modal-card-head has-background-grey-light">
+                    <p class="modal-card-title new ">Nuevo producto</p>
                     <button class="delete" aria-label="close" id="closeModal"></button>
                 </header>
-                <section class="modal-card-body has-background-warning-light">
+                <section class="modal-card-body has-background-grey-light">
                     <!-- Formulario para el nuevo producto -->
                     <form id="productForm">
-                        <div class="field ">
-                            <label class="label new">Nombre de la mascota</label>
+                        <div class="field">
+                            <label class="label new">Nombre del producto</label>
                             <div class="control">
-                                <input class="input" type="text" placeholder="Ingresa el nombre del animal" required>
+                                <input class="input" type="text" placeholder="Ingresa el nombre del producto" required>
                             </div>
                         </div>
 
                         <div class="field">
                             <label class="label new">Descripción</label>
                             <div class="control">
-                                <textarea class="textarea" placeholder="Ingresa una descripción del animal"
+                                <textarea class="textarea" placeholder="Ingresa una descripción del producto"
                                     required></textarea>
                             </div>
                         </div>
 
                         <div class="field">
-                            <label class="label new">Edad</label>
+                            <label class="label new">Precio</label>
                             <div class="control">
-                                <input class="input" type="number" step="0.01" placeholder="Ingresa la Edad del Animal"
+                                <input class="input" type="number" step="0.01" placeholder="Ingresa el precio del producto"
                                     required>
                             </div>
                         </div>
@@ -83,36 +82,33 @@
                                 <input class="input" type="file" accept="image/*" id="productImage" required>
                             </div>
                         </div>
-
                     </form>
                 </section>
 
-                <footer class="modal-card-foot has-background-warning-light">
-                    <button class="button is-success has-background-warning" id="saveProduct">Guardar</button>
+                <footer class="modal-card-foot has-background-grey-light">
+                    <button class="button is-success has-background-warning-dark has-text-grey-lighter" id="saveProduct">Guardar</button>
                     <button class="button" id="cancelModal">Cancelar</button>
                 </footer>
             </div>
         </div>
 
-        <!-- Modal de detalles del animal-->
-        <div class="modal " id="infoModal">
+        <!-- Modal de detalles del producto -->
+        <div class="modal" id="infoModal">
             <div class="modal-background"></div>
             <div class="modal-card">
-                <header class="modal-card-head has-background-warning-light">
-                    <p class="modal-card-title" id="infoModalTitle">Detalles de la mascota</p>
+                <header class="modal-card-head has-background-grey-light">
+                    <p class="modal-card-title" id="infoModalTitle">Detalles del producto</p>
                     <button class="delete" aria-label="close" id="closeInfoModal"></button>
                 </header>
-                <section class="modal-card-body has-background-warning-light" id="infoModalContent">
-                    <!-- Aquí se mostrará la información de la mascota -->
+                <section class="modal-card-body has-background-grey-light" id="infoModalContent">
+                    <!-- Aquí se mostrará la información del producto -->
                 </section>
             </div>
         </div>
 
-        <div class="fixed-grid has-4-cols ">
-            <div class="grid " id="content"></div>
-
+        <div class="fixed-grid has-4-cols">
+            <div class="grid" id="content"></div>
         </div>
-
     </section>
 </body>
 

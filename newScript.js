@@ -1,6 +1,7 @@
+/*
 const getTasks = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/tasks");
+      const response = await fetch("http://localhost:3000/api/products");
       if (response.ok) {
         const jsonResponse = await response.json();
         return jsonResponse;
@@ -29,8 +30,8 @@ const showTasks = (tasks) => {
           <div class="card-content">
             <div class="media">
               <div class="media-content">
-                <p class="title is-4">${task.title}</p>
-                <p class="subtitle is-6">Estado: ${task.status}</p>
+                <p class="title is-4">${task.name}</p>
+                <p class="subtitle is-6">Estado: ${task.price}</p>
               </div>
             </div>
             <div class="content">
@@ -43,3 +44,4 @@ const showTasks = (tasks) => {
     }
     );
     }
+    */
